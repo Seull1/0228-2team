@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo List</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .btn-group {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal_content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        #revise {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        #completeBtn {
+            padding: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="logo" style="text-align : center">
+            <a href="/session-login/todo" >
+            
+                <img  width="150" height="150" th:src="@{/images/a2.jpeg}" alt="로고 이미지">
+            </a>
+            <br>
+     <button type="button" class="btn btn-secondary" onclick="location.href='/session-login/todo/logout'">로그아웃</button>
+            &nbsp;
+            <button type="button" class="btn btn-secondary" onclick="location.href='/session-login/info'">마이페이지</button>
+            &nbsp;
+            <button type="button" class="btn btn-secondary" onclick="location.href='/session-login/todo/teamtodo'">팀 할일</button>
+
+    <form th:action="@{/todo/create}" method="post"><br>
+        <input name="content" placeholder="할일" />
+        <input name="date" placeholder="날짜" />
+        <button>작성</button><br>
+         
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>번호</th>
+                <th>할 일</th>
+                <th>날짜</th>
+                <th>수행 여부</th>
+                <th>수행 여부 수정</th>
+                <th>내용 수정</th>
+                <th>삭제</th>
+            </tr>
+        </thead>
+        <tbody>
+          
+
+            <tr th:block th:each="todoentity : ${toDoEntityList}">
+				<td th:text="${todoentity.id}"></td>
+				<td th:text="${todoentity.content}"></td>
+				<td th:text="${todoentity.date}"></td>
+				<td th:text="${todoentity.completed}"></td>
+				<td><button id="completedUpdateBtn"
+						th:onclick="completedUpdate([[${todoentity.id}]])">수행 여부 수정</button></td>
+				<td><button id="reviseBtn"
+						th:onclick="openModal([[${todoentity.id}]])">수정</button></td>
+				<td><button id="delete-btn"
+						th:onclick="deleteItem([[${todoentity.id}]])">삭제</button></td>
+			</tr>
+            
+            
+        </tbody>
+    </table>
+
+    <!-- 수정 완료 -->
+	<div class="modal">
+		<div class="modal_content">
+			<input id="revise" placeholder="내용을 수정해주세요" />
+			<button type="submit" id="completeBtn" onclick="reviseItem()">완료</button>
+		</div>
+	</div>
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+	let value = "";
+	
+	function deleteItem(id) {
+		console.log(id)
+		const url = "/session-login/todo/delete/" + id
+		$.ajax({
+			type : 'delete',
+			url : url,
+			contentType : 'application/json; charset=utf-8'
+		}).done(function() {
+			alert('할 일이 삭제되었습니다.');
+			window.location.href = '/session-login/todo';
+		}).fail(function(error) {
+			alert(JSON.stringify(error));
+		});
+	}
+	
+	function completedUpdate(id) {
+		console.log(id);
+		const url = "/session-login/todo/completedUpdate/" + id;
+		$.ajax({
+			type : 'put',
+			url : url,
+			contentType : 'application/json; charset=utf-8'
+		}).done(function() {
+			window.location.href = '/session-login/todo';
+		}).fail(function(error) {
+			alert(JSON.stringify(error));
+		});
+	}
+
+	function openModal(id) {
+		value = id
+		$(".modal").fadeIn();
+	}
+
+	function reviseItem() {
+
+		var id = value;
+		console.log(id)
+		var contentWritten = document.getElementById("revise").value;
+		var updateContent = contentWritten;
+		console.log(updateContent)
+		const url = "/session-login/todo/update/" + id;
+		$.ajax({
+			type : 'put',
+			url : url,
+			contentType : 'application/json; charset=utf-8',
+			data : updateContent,
+		}).done(function() {
+			alert('할 일이 수정되었습니다.');
+			window.location.href = '/session-login/todo';
+		}).fail(function(error) {
+			alert(JSON.stringify(error));
+		});
+
+		$(".modal").fadeOut();
+	}
+	
+</script>
+    
+</html>
